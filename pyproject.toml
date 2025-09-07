@@ -1,0 +1,10 @@
+[project]
+name = "ner-openvino-app"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "optimum[nncf,openvino]>=1.27.0",
+    "pytest>=8.4.2",
+]

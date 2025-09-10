@@ -3,7 +3,9 @@ models/loader.py
 Tokenizer/Model のロードとラベルマップ取得。
 """
 from __future__ import annotations
+from pathlib import Path
 
+from src.ner_openvino.download_model.downloader import download_model_snapshot
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 from ner_openvino.utils.logger_utils.logger_utils import LoggerFactoryImpl
 from ner_openvino.download_model.types import LoadedNER
@@ -11,7 +13,7 @@ from ner_openvino.download_model.types import LoadedNER
 logger = LoggerFactoryImpl("NER-OpenVINO-APP", log_file="logs/app.log")
 
 def load_ner_model(
-    model_dir: str,                 # ← 必須化（既にダウンロード済みのディレクトリを指定）
+    model_dir: Path,                 # ← 必須化（既にダウンロード済みのディレクトリを指定）
     device_map: str | None = None,
 ) -> LoadedNER:
     """
@@ -19,16 +21,20 @@ def load_ner_model(
     ダウンロードは別途 download_model_snapshot を直接呼び出すこと。
     """
 
+    logger.info("NER モデルをロードしています")
+    if not model_dir.exists():
+        model_dir.mkdir(parents=True)
+        model = download_model_snapshot(save_dir=model_dir)
+    else:
+        model = AutoModelForTokenClassification.from_pretrained(
+            model_dir,
+            torch_dtype=None,          # Transformers 既定
+            low_cpu_mem_usage=True,
+            device_map=device_map,     # None=CPU / "auto"=自動割当
+        )
+
     logger.info("Tokenizer をロードしています（use_fast=True）")
     tokenizer = AutoTokenizer.from_pretrained(model_dir, use_fast=True)
-
-    logger.info("NER モデルをロードしています")
-    model = AutoModelForTokenClassification.from_pretrained(
-        model_dir,
-        torch_dtype=None,          # Transformers 既定
-        low_cpu_mem_usage=True,
-        device_map=device_map,     # None=CPU / "auto"=自動割当
-    )
 
     config = model.config
     raw_id2label = getattr(config, "id2label", {})

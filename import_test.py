@@ -13,7 +13,7 @@ from importlib.metadata import version as get_distribution_version, PackageNotFo
 import importlib
 import pkgutil
 import sys
-from utils.logger_utils.logger_utils import LoggerFactoryImpl
+from ner_openvino.utils.logger_utils.logger_utils import LoggerFactoryImpl
 
 logger = LoggerFactoryImpl("NER-OpenVINO-APP", log_file="logs/app.log")
 

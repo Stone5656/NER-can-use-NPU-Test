@@ -6,7 +6,7 @@ Interface層(logger_interface.LoggerFactory)に従う。
 
 import logging
 import sys
-from utils.logger_utils.logger_interface import LoggerFactory
+from ner_openvino.utils.logger_utils.logger_interface import LoggerFactory
 
 # ANSI カラーコード定義
 COLOR_RESET = "\033[0m"

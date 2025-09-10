@@ -7,8 +7,8 @@ from __future__ import annotations
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 from ner_openvino.utils.logger_utils.logger_utils import LoggerFactoryImpl
 
-from ner_openvino.models.downloader import download_model_snapshot
-from ner_openvino.models.types import LoadedNER
+from ner_openvino.download_model.downloader import download_model_snapshot
+from ner_openvino.download_model.types import LoadedNER
 
 logger = LoggerFactoryImpl("NER-OpenVINO-APP", log_file="logs/app.log")
 
@@ -18,12 +18,14 @@ def load_ner_model(
     cache_dir: str | None = None,
     token: str | None = None,
     device_map: str | None = None,
+    save_dir: str | None = None,
 ) -> LoadedNER:
     model_dir = download_model_snapshot(
         repo_id=repo_id,
         revision=revision,
         cache_dir=cache_dir,
-        token=token
+        token=token,
+        save_dir=save_dir,
     )
 
     logger.info("Tokenizer をロードしています（use_fast=True）")

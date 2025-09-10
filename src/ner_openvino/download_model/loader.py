@@ -6,27 +6,18 @@ from __future__ import annotations
 
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 from ner_openvino.utils.logger_utils.logger_utils import LoggerFactoryImpl
-
-from ner_openvino.download_model.downloader import download_model_snapshot
 from ner_openvino.download_model.types import LoadedNER
 
 logger = LoggerFactoryImpl("NER-OpenVINO-APP", log_file="logs/app.log")
 
 def load_ner_model(
-    repo_id: str | None = None,
-    revision: str | None = None,
-    cache_dir: str | None = None,
-    token: str | None = None,
+    model_dir: str,                 # ← 必須化（既にダウンロード済みのディレクトリを指定）
     device_map: str | None = None,
-    save_dir: str | None = None,
 ) -> LoadedNER:
-    model_dir = download_model_snapshot(
-        repo_id=repo_id,
-        revision=revision,
-        cache_dir=cache_dir,
-        token=token,
-        save_dir=save_dir,
-    )
+    """
+    すでにローカルにある model_dir をロードする。
+    ダウンロードは別途 download_model_snapshot を直接呼び出すこと。
+    """
 
     logger.info("Tokenizer をロードしています（use_fast=True）")
     tokenizer = AutoTokenizer.from_pretrained(model_dir, use_fast=True)
@@ -40,7 +31,6 @@ def load_ner_model(
     )
 
     config = model.config
-    # config.id2label は {str:int} or {int:str} 両パターンがあり得るのでケア
     raw_id2label = getattr(config, "id2label", {})
     id2label: dict[int, str] = {int(k): v for k, v in raw_id2label.items()} if raw_id2label else {}
     label2id: dict[str, int] = getattr(config, "label2id", {})
@@ -49,7 +39,7 @@ def load_ner_model(
     logger.debug(f"id2label: {id2label}")
     logger.debug(f"label2id: {label2id}")
 
-    # offset_mapping が FastTokenizer で有効か確認
+    # offset_mapping チェック
     test_text = "テスト用の短い文章です。"
     enc = tokenizer(test_text, return_offsets_mapping=True)
     if enc.get("offset_mapping", None) is None:

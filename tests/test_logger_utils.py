@@ -4,7 +4,7 @@ import re
 import sys
 import logging
 from contextlib import redirect_stdout
-from utils.logger_utils.logger_utils import LoggerFactoryImpl
+from ner_openvino.utils.logger_utils.logger_utils import LoggerFactoryImpl
 
 ANSI_PATTERN = re.compile(r"\x1b\[[0-9;]*m")  # ANSI エスケープのざっくり検出
 
@@ -40,7 +40,7 @@ def test_interface_swap_with_mock(tmp_path):
     """
     Interface（LoggerFactory）に沿って Moc を差し替えられることを確認。
     """
-    from utils.logger_utils.logger_interface import LoggerFactory
+    from ner_openvino.utils.logger_utils.logger_interface import LoggerFactory
 
     class MockLogger:
         def __init__(self):

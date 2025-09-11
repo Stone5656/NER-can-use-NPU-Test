@@ -2,7 +2,8 @@
 from __future__ import annotations
 from pathlib import Path
 from contextlib import asynccontextmanager
-from typing import Annotated, Optional
+from typing import Annotated
+import time
 
 import asyncio
 import openvino as ov
@@ -63,10 +64,13 @@ def health():
 
 @app.post("/ner_text", response_model=list[Entity])
 def ner_text(body: NERIn, nlp=Depends(get_ner_pipeline)):
+    start_time = time.time()
     results = nlp(body.text)
     for r in results:
         # numpy.float32 → Python float
         r["score"] = float(r["score"])
+    end_time = time.time()
+    print(f"{end_time - start_time:.5f}秒")
     return results
 
 # -------- ここから set_device 用 API --------

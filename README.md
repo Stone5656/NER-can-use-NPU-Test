@@ -109,3 +109,12 @@ uv run pytest -q
 3. OpenVINO Runtime で推論・オフセット復元
 4. LangChain 経由で匿名化・抽象化デモ
 5. 精度/速度比較・評価
+
+uv run benchmark_app \
+  -m ./models/tsmatz_intel/openvino_model.xml \
+  -d CPU \
+  -shape "input_ids[1,128],attention_mask[1,128]" \
+  -hint latency \
+  -t 15
+
+uv run uvicorn ner_openvino.main:app --reload                                                                              ─╯

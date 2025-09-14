@@ -118,3 +118,5 @@ uv run benchmark_app \
   -t 15
 
 uv run uvicorn ner_openvino.main:app --reload                                                                              ─╯
+uv run benchmark_app -m ./models/donut_ja_ov/openvino_decoder_model.xml -d NPU -shape "input_ids[1,128],encoder_hidden_states[1,400,1024]" -hint latency
+-t 15

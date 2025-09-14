@@ -1,17 +1,17 @@
 from pathlib import Path
-from decode_npu_ner_outputs import decode_ner_outputs
+from decode_npu_ner_outputs import decode_ner_outputs, decode_ner_outputs_batch
 from ner_openvino.download_model.loader_intel import load_ner_model_intel
 from src.ner_openvino.download_model.loader_intel_npu import load_npu_model_intel
 
 model_dir = Path("./models/tsmatz_intel_npu")
 max_sequence_length = 512
-batch_size = 1
+batch_size = 8
 ner_models = load_npu_model_intel(
     model_dir=model_dir,
     max_seq_len=max_sequence_length,
     batch_size=batch_size
 )
-texts = """拙者、親方と申すは、お立合いの中に、
+long_text = """拙者、親方と申すは、お立合いの中に、
 御存知のお方も御座りましょうが、
 お江戸を発って二十里上方、
 相州小田原一色町をお過ぎなされて、
@@ -54,13 +54,29 @@ texts = """拙者、親方と申すは、お立合いの中に、
 魚鳥、茸、麺類の食合わせ、其の他、万病速効ある事神の如し。
 """
 
+def split_text_into_chunks(text: str, n_chunks: int = 4) -> list[str]:
+    """文字数に基づいてテキストを n_chunks に分割する。
+    
+    Args:
+        text (str): 入力テキスト
+        n_chunks (int): 分割数（デフォルト4）
+    
+    Returns:
+        list[str]: 分割後のテキストリスト
+    """
+    length = len(text)
+    chunk_size = (length + n_chunks - 1) // n_chunks  # 切り上げ
+    return [text[i:i + chunk_size] for i in range(0, length, chunk_size)]
+
+texts = split_text_into_chunks(long_text, n_chunks=batch_size)
+
 enc = ner_models.tokenizer(
     texts,
     return_tensors="np",
     padding="max_length",
     truncation=True,
-    max_length=max_sequence_length,  # ★ reshape時と一致
-    return_offsets_mapping=False,    # ここでは不要（decode側で再トークナイズするため）
+    max_length=max_sequence_length,
+    return_offsets_mapping=False,
 )
 
 outputs = ner_models.model(
@@ -68,12 +84,15 @@ outputs = ner_models.model(
     attention_mask=enc["attention_mask"],
 )
 
-entities = decode_ner_outputs(
-    text=texts,
+entities_batch = decode_ner_outputs_batch(
+    texts=texts,
     tokenizer=ner_models.tokenizer,
     id2label=ner_models.id2label,
     logits=outputs.logits,
     max_sequence_length=max_sequence_length,
 )
-for ent in entities:
-    print(ent)
+
+for i, ents in enumerate(entities_batch):
+    print(f"=== Text {i} ===")
+    for ent in ents:
+        print(ent)

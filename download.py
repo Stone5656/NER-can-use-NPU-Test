@@ -1,5 +1,6 @@
 from pathlib import Path
 from ner_openvino.npu_ner.decode_ner import decode_ner_outputs_batch
+from ner_openvino.utils.text_utils.split_longtext import split_text_into_chunks
 from src.ner_openvino.download_model.loader_intel_npu import load_npu_model_intel
 
 model_dir = Path("./models/tsmatz_intel_npu")
@@ -53,20 +54,6 @@ long_text = """拙者、親方と申すは、お立合いの中に、
 薫風咽より来り、口中微涼を生ずるが如し、
 魚鳥、茸、麺類の食合わせ、其の他、万病速効ある事神の如し。
 """
-
-def split_text_into_chunks(text: str, n_chunks: int = 4) -> list[str]:
-    """文字数に基づいてテキストを n_chunks に分割する。
-    
-    Args:
-        text (str): 入力テキスト
-        n_chunks (int): 分割数（デフォルト4）
-    
-    Returns:
-        list[str]: 分割後のテキストリスト
-    """
-    length = len(text)
-    chunk_size = (length + n_chunks - 1) // n_chunks  # 切り上げ
-    return [text[i:i + chunk_size] for i in range(0, length, chunk_size)]
 
 texts = split_text_into_chunks(long_text, n_chunks=4)
 

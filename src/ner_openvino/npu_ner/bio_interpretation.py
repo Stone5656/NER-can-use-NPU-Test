@@ -18,9 +18,6 @@ BIO 形式のラベルを扱うための小さなユーティリティ。
 
 from __future__ import annotations
 import numpy as np
-from ner_openvino.utils.logger_utils.logger_utils import LoggerFactoryImpl
-
-logger = LoggerFactoryImpl("NER-OpenVINO-APP", log_file="logs/app.log")
 
 
 # BIOラベル付きの文字をラベルと文字に分解

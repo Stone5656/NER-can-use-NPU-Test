@@ -55,7 +55,7 @@ long_text = """拙者、親方と申すは、お立合いの中に、
 魚鳥、茸、麺類の食合わせ、其の他、万病速効ある事神の如し。
 """
 
-texts = split_text_into_chunks(long_text, n_chunks=4)
+texts = split_text_into_chunks(long_text, n_chunks=batch_size)
 
 enc = ner_models.tokenizer(
     texts,

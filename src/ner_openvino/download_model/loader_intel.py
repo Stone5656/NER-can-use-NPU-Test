@@ -8,7 +8,7 @@ from ner_openvino.download_model.types import LoadedNER
 from src.ner_openvino.download_model.downloader import download_model_snapshot
 from ner_openvino.utils.logger_utils.logger_injector import with_logger
 
-@with_logger("NER-OpenVINO-APP", log_file="logs/app.log", env_var="LOG_LEVEL")
+@with_logger("NER-OpenVINO-APP", env_log_path="LOG_FILE_PATH", env_var="LOG_LEVEL")
 def load_ner_model_intel(
     model_dir: Path,
     *,

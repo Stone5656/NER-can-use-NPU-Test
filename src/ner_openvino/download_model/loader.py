@@ -11,7 +11,7 @@ from transformers import AutoTokenizer, AutoModelForTokenClassification
 from ner_openvino.download_model.types import LoadedNER
 from ner_openvino.utils.logger_utils.logger_injector import with_logger
 
-@with_logger("NER-OpenVINO-APP", log_file="logs/app.log", env_var="LOG_LEVEL")
+@with_logger("NER-OpenVINO-APP", env_log_path="LOG_FILE_PATH", env_var="LOG_LEVEL")
 def load_ner_model(
     model_dir: Path,                 # ← 必須化（既にダウンロード済みのディレクトリを指定）
     device_map: str | None = None,

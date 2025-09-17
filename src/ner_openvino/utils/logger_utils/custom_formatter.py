@@ -9,7 +9,7 @@ class ColorFormatter(logging.Formatter):
         original = record.levelname
         record.levelname = f"{color}{original}{COLOR_RESET}"
 
-        fmt = "%(name)s [%(levelname)s] (%(filename)s:%(lineno)d): %(message)s"
+        fmt = "%(name)s [%(levelname)s] (%(filename)s:%(lineno)d):\n%(message)s"
         formatter = logging.Formatter(fmt, "%Y-%m-%d %H:%M:%S")
         out = formatter.format(record)
 
@@ -17,14 +17,14 @@ class ColorFormatter(logging.Formatter):
         return out
 
 def build_stream_handler(level: int) -> logging.Handler:
-    h = logging.StreamHandler(sys.stdout)
-    h.setLevel(level)
-    h.setFormatter(ColorFormatter())
-    return h
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(level)
+    handler.setFormatter(ColorFormatter())
+    return handler
 
 def build_file_handler(log_file: str, level: int) -> logging.Handler:
-    h = logging.FileHandler(log_file, encoding="utf-8")
-    h.setLevel(level)
+    handler = logging.FileHandler(log_file, encoding="utf-8")
+    handler.setLevel(level)
     fmt = "%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s"
-    h.setFormatter(logging.Formatter(fmt, "%Y-%m-%d %H:%M:%S"))
-    return h
+    handler.setFormatter(logging.Formatter(fmt, "%Y-%m-%d %H:%M:%S"))
+    return handler

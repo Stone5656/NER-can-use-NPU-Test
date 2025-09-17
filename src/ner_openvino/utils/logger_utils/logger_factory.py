@@ -1,11 +1,12 @@
 # logger_factory.py
 import logging
+from pathlib import Path
 from .level_mapper import map_level
 from .custom_formatter import build_stream_handler, build_file_handler
 
 def get_logger(
     name: str,
-    log_file: str | None = None,
+    log_file: Path | None = None,
     level: int | str = logging.INFO,
     propagate: bool = False,
 ) -> logging.Logger:
@@ -19,9 +20,19 @@ def get_logger(
     if logger.hasHandlers():
         logger.handlers.clear()
 
-    logger.addHandler(build_stream_handler(numeric_level))
+    logger.addHandler(
+        build_stream_handler(
+            level=numeric_level
+        )
+    )
+    
     if log_file:
-        logger.addHandler(build_file_handler(log_file, numeric_level))
+        logger.addHandler(
+            build_file_handler(
+                log_file=str(log_file),
+                level=numeric_level,
+            )
+        )
     return logger
 
 # 既存互換エイリアス

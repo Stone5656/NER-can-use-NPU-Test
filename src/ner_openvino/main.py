@@ -1,8 +1,9 @@
-# app.py
 from __future__ import annotations
+import os
 from pathlib import Path
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
+from dotenv import load_dotenv
 import time
 import asyncio
 
@@ -17,8 +18,25 @@ from ner_openvino.utils.text_utils.split_longtext import split_text_into_chunks
 from ner_openvino.download_model.loader_intel import load_ner_model_intel
 from src.ner_openvino.download_model.loader_intel_npu import load_npu_model_intel
 
-SAVE_DIR = Path("./models/tsmatz_intel")
-SAVE_DIR_NPU = Path("./models/tsmatz_intel_npu")
+load_dotenv()
+
+# モデル保存先
+SAVE_DIR = Path(
+    os.getenv("NER_SAVE_DIR", "./models/tsmatz_intel")
+).expanduser().resolve()
+
+SAVE_DIR_NPU = Path(
+    os.getenv("NER_SAVE_DIR_NPU", "./models/tsmatz_intel_npu")
+).expanduser().resolve()
+
+# 推論用の最大シーケンス長とバッチサイズ
+max_seq_len = int(os.getenv("NER_MAX_SEQ_LEN", 256))
+batch_size = int(os.getenv("NER_BATCH_SIZE", 4))
+
+# アプリ起動時に使用するデバイス
+init_device = str(
+    os.getenv("NER_INIT_DEVICE", "AUTO")
+)
 
 class Entity(BaseModel):
     entity_group: str
@@ -147,7 +165,7 @@ class NPUBackend(BaseBackend):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 既定は AUTO で pipeline ルート
-    app.state.backend = PipelineBackend(model_dir=SAVE_DIR, device="AUTO")
+    app.state.backend = PipelineBackend(model_dir=SAVE_DIR, device=init_device)
     app.state.compile_lock = asyncio.Lock()
     yield
 
@@ -210,8 +228,8 @@ async def set_device(body: DeviceIn, request: Request):
                 # NPU 専用バックエンドへ切替
                 request.app.state.backend = NPUBackend(
                     model_dir=SAVE_DIR_NPU,
-                    max_seq_len=256,
-                    batch_size=4,
+                    max_seq_len=max_seq_len,
+                    batch_size=batch_size,
                 )
             else:
                 # それ以外は pipeline 方式（AUTO/CPU/GPU/MULTI/AUTO:.. を含む）

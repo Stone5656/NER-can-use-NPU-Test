@@ -1,3 +1,11 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+package = true  # 明示（既定は true だが明文化しておくと安心なので）
+link-mode = "copy"
+
 [project]
 name = "ner-openvino-app"
 version = "0.1.0"
@@ -14,3 +22,10 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+# optimum内でopsetが重複してるらしきライブラリ性のワーニングを除去
+[tool.pytest.ini_options]
+filterwarnings = [
+  # メッセージで絞り込み、カテゴリは基底の Warning、モジュールも限定
+  "ignore:.*scaled_dot_product_attention.*:Warning:torch.onnx._internal.registration.*",
+]

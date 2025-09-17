@@ -25,15 +25,10 @@
 """
 
 from __future__ import annotations
-import numpy as np
-from ner_openvino.utils.logger_utils.logger_utils import LoggerFactoryImpl
 
-logger = LoggerFactoryImpl("NER-OpenVINO-APP", log_file="logs/app.log")
-
-
+# 2つの区間のあいだが「空白だけ」かどうかを調べる
 def validate_blank_gap(gap_substring: str) -> bool:
-    """【一文】2つの区間のあいだが「空白だけ」かどうかを調べます。
-
+    """
     目的:
         まとまり同士をつなげてよいか考えるときに、
         あいだの文字が空白（スペース・改行など）だけなら
@@ -52,9 +47,9 @@ def validate_blank_gap(gap_substring: str) -> bool:
     return gap_substring.strip() == ""
 
 
+# 同じラベルで「重なる/くっつく/空白だけを挟む」関係なら、つなげられると判断する。
 def is_continuous_label(previous_word: dict[str, object], current_word: dict[str, object], original_text: str) -> bool:
-    """【一文】同じラベルで「重なる/くっつく/空白だけを挟む」関係なら、つなげられると判断します。
-
+    """
     目的:
         直前の区間と次の区間が同じラベルで、境界が重なっていたり、
         ぴったり接していたり、間が空白だけなら「連続している」と見なします。
@@ -85,9 +80,9 @@ def is_continuous_label(previous_word: dict[str, object], current_word: dict[str
     return contiguous
 
 
+# 同じラベルで隣接（空白を含む）する区間をまとめて、ひとつのまとまりに統合する
 def merge_adjacent_entities(word_list: list[dict[str, object]], original_text: str) -> list[dict[str, object]]:
-    """【一文】同じラベルで隣接（空白を含む）する区間をまとめて、ひとつのまとまりに統合します。
-
+    """
     目的:
         サブワード分割などで同じラベルのまとまりが細切れに出るとき、
         「重なる/くっつく/空白だけを挟む」関係なら1つのまとまりとして結合します。

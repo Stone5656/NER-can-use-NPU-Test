@@ -1,15 +1,19 @@
 from __future__ import annotations
+import logging
 from pathlib import Path
 
 from optimum.intel.openvino import OVModelForTokenClassification
 from transformers import AutoTokenizer
-from ner_openvino.utils.logger_utils.logger_utils import LoggerFactoryImpl
 from ner_openvino.download_model.types import LoadedNER
 from src.ner_openvino.download_model.downloader import download_model_snapshot
+from ner_openvino.utils.logger_utils.logger_injector import with_logger
 
-logger = LoggerFactoryImpl("NER-OpenVINO-APP", log_file="logs/app.log")
-
-def load_ner_model_intel(model_dir: Path) -> LoadedNER:
+@with_logger("NER-OpenVINO-APP", log_file="logs/app.log", env_var="LOG_LEVEL")
+def load_ner_model_intel(
+    model_dir: Path,
+    *,
+    logger: logging.Logger
+) -> LoadedNER:
     """
     既存の model_dir から OpenVINO IR をロード（なければDL→IR出力→保存）。
     """

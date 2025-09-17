@@ -1,20 +1,22 @@
 from __future__ import annotations
+import logging
 from pathlib import Path
 
 from optimum.intel.openvino import OVModelForTokenClassification
 from transformers import AutoTokenizer
-from ner_openvino.utils.logger_utils.logger_utils import LoggerFactoryImpl
 from ner_openvino.download_model.types import LoadedNER
-from src.ner_openvino.download_model.downloader import download_model_snapshot
+from ner_openvino.download_model.downloader import download_model_snapshot
+from ner_openvino.utils.logger_utils.logger_injector import with_logger
 
-logger = LoggerFactoryImpl("NER-OpenVINO-APP", log_file="logs/app.log")
-
+@with_logger("NER-OpenVINO-APP", log_file="logs/app.log", env_var="LOG_LEVEL")
 def load_npu_model_intel(
     model_dir: Path,
     *,
+    repo_id:str | None = None,
     device: str = "NPU",         # ← 既定でNPU
     max_seq_len: int = 256,      # ← NPU要件：固定長にそろえる
     batch_size: int = 1,         # ← NPU要件：バッチも固定（一般に1を推奨）
+    logger: logging.Logger,
 ) -> LoadedNER:
     """
     NPU向け：既存の model_dir から OpenVINO IR をロード（なければDL→IR出力→保存）。
@@ -26,7 +28,10 @@ def load_npu_model_intel(
     if not model_dir.exists() or not any(model_dir.glob("*.bin")):
         model_dir.mkdir(parents=True, exist_ok=True)
         # downloader側のデフォルトrepo_idで取得
-        download_model_snapshot(save_dir=model_dir)
+        download_model_snapshot(
+            repo_id=repo_id,
+            save_dir=model_dir
+        )
 
         # PyTorch重みからIRへオンザフライ変換
         ov_model = OVModelForTokenClassification.from_pretrained(

@@ -3,20 +3,22 @@ models/downloader.py
 Hugging Face Hub から選択ダウンロード（snapshot_download）を行う。
 """
 from __future__ import annotations
+import logging
 from pathlib import Path
 from huggingface_hub import snapshot_download
 
-from ner_openvino.utils.logger_utils.logger_utils import LoggerFactoryImpl
 from ner_openvino.download_model.config import DEFAULT_MODEL_REPO, load_allow_patterns, load_ignore_patterns
+from ner_openvino.utils.logger_utils.logger_injector import with_logger
 
-logger = LoggerFactoryImpl("NER-OpenVINO-APP", log_file="logs/app.log")
-
+@with_logger("NER-OpenVINO-APP", log_file="logs/app.log", env_var="LOG_LEVEL")
 def download_model_snapshot(
     repo_id: str | None  = None,
     revision: str | None = None,
     cache_dir: str | None = None,
     token: str | None = None,
     save_dir: Path | None = None,
+    *,
+    logger: logging.Logger,
 ) -> Path:
     # repo_id が None の場合は DEFAULT_MODEL_REPO を使う
     repo_id = repo_id or DEFAULT_MODEL_REPO

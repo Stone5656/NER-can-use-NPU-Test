@@ -123,7 +123,7 @@ def compute_softmax_batch(predictions, *, logger):
 
 ## 📜 ライセンス
 
-このプロジェクトは **MIT License** の下で公開されています。
+このプロジェクトは **Open Software License** の下で公開されています。
 利用・改変・再配布が自由に可能ですが、著作権表示とライセンス文を残す必要があります。
 
 📄 詳細は [LICENSE](./LICENSE) を参照してください。

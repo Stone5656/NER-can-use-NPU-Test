@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
+from uuid import uuid4
 from dotenv import load_dotenv
 import time
 import asyncio
@@ -10,13 +11,19 @@ import asyncio
 import openvino as ov
 from fastapi import FastAPI, Depends, Request, HTTPException
 from pydantic import BaseModel
+from sqlmodel import Session, create_engine, select
 from transformers import pipeline
 
 # === 追加: NPU ルート用ユーティリティ ===
+from ner_openvino import ai
 from ner_openvino.npu_ner.decode_ner import decode_ner_outputs_batch
 from ner_openvino.utils.text_utils.split_longtext import split_text_into_chunks
 from ner_openvino.download_model.loader_intel import load_ner_model_intel
 from src.ner_openvino.download_model.loader_intel_npu import load_npu_model_intel
+
+# Gemini API 関係
+from .models import *
+from .schemas import *
 
 load_dotenv()
 
@@ -38,6 +45,12 @@ init_device = str(
     os.getenv("NER_INIT_DEVICE", "AUTO")
 )
 
+# データベース
+engine = create_engine(
+    os.getenv("DATABASE_URL", "sqlite:///./ner_app.db"),
+)
+
+
 class Entity(BaseModel):
     entity_group: str
     score: float
@@ -45,18 +58,24 @@ class Entity(BaseModel):
     start: int
     end: int
 
+
 class NERIn(BaseModel):
     text: str
+
 
 class DeviceIn(BaseModel):
     device: str  # "CPU", "GPU", "NPU", "AUTO", "AUTO:NPU,CPU" など
 
 # ------------ バックエンド抽象化 ------------
+
+
 class BaseBackend:
     kind: Literal["pipeline", "npu"]
     device: str
+
     async def infer(self, text: str) -> list[dict]:
         raise NotImplementedError
+
 
 class PipelineBackend(BaseBackend):
     def __init__(self, model_dir: Path, device: str = "AUTO"):
@@ -77,6 +96,7 @@ class PipelineBackend(BaseBackend):
         for r in results:
             r["score"] = float(r["score"])
         return results
+
 
 class NPUBackend(BaseBackend):
     def __init__(self, model_dir: Path, max_seq_len: int = 512, batch_size: int = 8):
@@ -126,12 +146,14 @@ class NPUBackend(BaseBackend):
         for (_, chunk), ents in zip(chunk_indices, entities_batch):
             for e in ents:
                 # 1) ラベル名の取り出し（entity_group / label / entity に対応）
-                raw = e.get("entity_group") or e.get("label") or e.get("entity")
+                raw = e.get("entity_group") or e.get(
+                    "label") or e.get("entity")
                 if not raw:
                     # 想定外のフォーマットはスキップ
                     continue
                 # BIO プレフィックス除去（B-*, I-* → *）
-                group = raw.split("-", 1)[1] if raw.startswith(("B-", "I-")) else raw
+                group = raw.split(
+                    "-", 1)[1] if raw.startswith(("B-", "I-")) else raw
 
                 # 2) 位置とスコア
                 s_local = int(e.get("start", 0))
@@ -167,14 +189,26 @@ async def lifespan(app: FastAPI):
     # 既定は AUTO で pipeline ルート
     app.state.backend = PipelineBackend(model_dir=SAVE_DIR, device=init_device)
     app.state.compile_lock = asyncio.Lock()
+    SQLModel.metadata.create_all(engine)
     yield
 
 app = FastAPI(lifespan=lifespan)
 
+
 def get_backend(request: Request) -> BaseBackend:
     return request.app.state.backend
 
+
 BackendDep = Annotated[BaseBackend, Depends(get_backend)]
+
+
+def get_conn():
+    with Session(engine) as session:
+        yield session
+
+
+SessionDep = Annotated[Session, Depends(get_conn)]
+
 
 @app.get("/")
 def health():
@@ -186,6 +220,7 @@ def health():
         "backend": getattr(app.state.backend, "kind", None),
     }
 
+
 @app.post("/ner_text", response_model=list[Entity])
 async def ner_text(body: NERIn, backend: BackendDep):
     start_time = time.time()
@@ -195,6 +230,8 @@ async def ner_text(body: NERIn, backend: BackendDep):
     return results
 
 # -------- デバイス切替 API --------
+
+
 @app.get("/devices")
 def get_devices():
     core = ov.Core()
@@ -203,6 +240,7 @@ def get_devices():
         "current": getattr(app.state.backend, "device", None),
         "backend": getattr(app.state.backend, "kind", None),
     }
+
 
 @app.post("/devices")
 async def set_device(body: DeviceIn, request: Request):
@@ -252,3 +290,63 @@ async def set_device(body: DeviceIn, request: Request):
                 status_code=400,
                 detail=f"Failed to switch to '{device}': {e}"
             ) from e
+
+# Gemini API
+
+
+@app.get("/threads", response_model=list[ThreadSchema])
+async def get_threads(session: SessionDep):
+    threads = session.exec(select(AiThread)).all()
+    return threads
+
+
+@app.get("/thread/{thread_id}", response_model=ThreadSchema | None)
+async def get_thread(thread_id: str, session: SessionDep):
+    thread = session.get(AiThread, thread_id)
+    AiThread.messages
+    return thread
+
+
+@app.post("/thread", response_model=ThreadSchema)
+async def create_thread(thread: ThreadCreateSchema, session: SessionDep):
+    new_thread = AiThread(id=str(uuid4()), title=thread.title)
+    session.add(new_thread)
+    session.commit()
+    session.refresh(new_thread)
+    return new_thread
+
+
+@app.delete("/thread/{thread_id}")
+async def delete_thread(thread_id: str, session: SessionDep):
+    thread = session.get(AiThread, thread_id)
+    if thread:
+        session.delete(thread)
+        session.commit()
+    return {"status": "ok"}
+
+
+@app.patch("/thread/{thread_id}", response_model=ThreadSchema | None)
+async def update_thread(thread_id: str, update: ThreadUpdateSchema, session: SessionDep):
+    thread = session.get(AiThread, thread_id)
+    if thread:
+        thread.title = update.new_title
+        session.add(thread)
+        session.commit()
+        session.refresh(thread)
+    return thread
+
+
+@app.post("/thread/{thread_id}/message", response_model=MessageSchema)
+async def add_message(thread_id: str, message: MessageCreateSchema, session: SessionDep):
+    thread = session.get(AiThread, thread_id)
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    new_message = AiMessage(
+        id=str(uuid4()),
+        content=message.content,
+        role=MessageRole.USER,
+        thread_id=thread.id,
+    )
+    session.add(new_message)
+    session.commit()
+    return await ai.add_response(thread, session)

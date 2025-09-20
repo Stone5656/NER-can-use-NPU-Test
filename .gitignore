@@ -7,3 +7,4 @@ models/*
 .env
 !.env.example
 *.egg-info
+database.db

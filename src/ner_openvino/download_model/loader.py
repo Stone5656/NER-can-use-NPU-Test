@@ -11,7 +11,8 @@ from transformers import AutoTokenizer, AutoModelForTokenClassification
 from ner_openvino.download_model.types import LoadedNER
 from ner_openvino.utils.logger_utils.logger_injector import with_logger
 
-@with_logger("NER-OpenVINO-APP", env_log_path="LOG_FILE_PATH", env_var="LOG_LEVEL")
+
+@with_logger("NER-OpenVINO-APP", env_log_path="LOG_FILE_PATH", env_log_level="LOG_LEVEL")
 def load_ner_model(
     model_dir: Path,                 # ← 必須化（既にダウンロード済みのディレクトリを指定）
     device_map: str | None = None,
@@ -40,7 +41,8 @@ def load_ner_model(
 
     config = model.config
     raw_id2label = getattr(config, "id2label", {})
-    id2label: dict[int, str] = {int(k): v for k, v in raw_id2label.items()} if raw_id2label else {}
+    id2label: dict[int, str] = {
+        int(k): v for k, v in raw_id2label.items()} if raw_id2label else {}
     label2id: dict[str, int] = getattr(config, "label2id", {})
 
     logger.info(f"ラベル数: {getattr(config, 'num_labels', len(id2label))}")

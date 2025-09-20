@@ -10,9 +10,10 @@ from huggingface_hub import snapshot_download
 from ner_openvino.download_model.config import DEFAULT_MODEL_REPO, load_allow_patterns, load_ignore_patterns
 from ner_openvino.utils.logger_utils.logger_injector import with_logger
 
-@with_logger("NER-OpenVINO-APP", env_log_path="LOG_FILE_PATH", env_var="LOG_LEVEL")
+
+@with_logger("NER-OpenVINO-APP", env_log_path="LOG_FILE_PATH", env_log_level="LOG_LEVEL")
 def download_model_snapshot(
-    repo_id: str | None  = None,
+    repo_id: str | None = None,
     revision: str | None = None,
     cache_dir: str | None = None,
     token: str | None = None,

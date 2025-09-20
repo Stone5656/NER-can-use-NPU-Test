@@ -18,7 +18,7 @@ from ner_openvino.utils.logger_utils.logger_injector import with_logger
 
 
 # モデルの出力から確率と分類を出す
-@with_logger("NER-OpenVINO-APP", env_log_path="LOG_FILE_PATH", env_var="LOG_LEVEL")
+@with_logger("NER-OpenVINO-APP", env_log_path="LOG_FILE_PATH", env_log_level="LOG_LEVEL")
 def compute_softmax_batch(
     prediction_values: np.ndarray,
     *,

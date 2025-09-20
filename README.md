@@ -11,14 +11,14 @@ Intel 社の推論エンジン **OpenVINO** を活用し、軽量・高速な処
 
 ## 🛠 技術スタック
 
-| 分類       | 使用技術                                                     |
-| -------- | -------------------------------------------------------- |
-| 言語・実行環境  | Python 3.10                                              |
-| 環境管理     | [uv](https://docs.astral.sh/uv/)                         |
-| 推論ライブラリ  | [OpenVINO](https://docs.openvino.ai/)                    |
+| 分類           | 使用技術                                                 |
+| -------------- | -------------------------------------------------------- |
+| 言語・実行環境 | Python 3.10                                              |
+| 環境管理       | [uv](https://docs.astral.sh/uv/)                         |
+| 推論ライブラリ | [OpenVINO](https://docs.openvino.ai/)                    |
 | モデル最適化   | [Optimum](https://huggingface.co/docs/optimum/index)     |
-| NLPライブラリ | [Transformers](https://huggingface.co/docs/transformers) |
-| テスト      | [pytest](https://docs.pytest.org/)                       |
+| NLP ライブラリ | [Transformers](https://huggingface.co/docs/transformers) |
+| テスト         | [pytest](https://docs.pytest.org/)                       |
 
 ---
 
@@ -74,7 +74,7 @@ Intel 社の推論エンジン **OpenVINO** を活用し、軽量・高速な処
 
 ## 🤖 推奨モデル
 
-* [tsmatz/xlm-roberta-ner-japanese](https://huggingface.co/tsmatz/xlm-roberta-ner-japanese)
+- [tsmatz/xlm-roberta-ner-japanese](https://huggingface.co/tsmatz/xlm-roberta-ner-japanese)
   Wikipedia 日本語版で訓練された **XLM-RoBERTa** ベースの NER モデルです。
   人物 (PER)、組織 (ORG)、場所 (LOC) などを検出可能。
 
@@ -100,10 +100,10 @@ LOGPATH=./logs/app.log
 LOG_LEVEL=INFO
 ```
 
-### 📁 ner\_pattern フォルダ
+### 📁 ner_pattern フォルダ
 
-* `ner_allow.txt`: 許可する固有表現
-* `ner_ignore.txt`: 除外する固有表現
+- `ner_allow.txt`: 許可する固有表現
+- `ner_ignore.txt`: 除外する固有表現
   ➡️ `NER_PATTERN_DIR` を指定すれば任意の場所から読み込み可能。
 
 ### 📝 ログ設定 (`with_logger` デコレータ)
@@ -111,13 +111,13 @@ LOG_LEVEL=INFO
 関数にロガーを自動注入します。
 
 ```python
-@with_logger("NER-OpenVINO-APP", log_file="LOG_FILE_PATH", env_var="LOG_LEVEL")
+@with_logger("NER-OpenVINO-APP", log_file="LOG_FILE_PATH", env_log_level="LOG_LEVEL")
 def compute_softmax_batch(predictions, *, logger):
     logger.info("softmax 計算開始")
 ```
 
-* `LOG_FILE_PATH`: 出力先ファイル（未指定なら `logs/app.log`）
-* `LOG_LEVEL`: ログレベル（DEBUG, INFO, WARNING…）
+- `LOG_FILE_PATH`: 出力先ファイル（未指定なら `logs/app.log`）
+- `LOG_LEVEL`: ログレベル（DEBUG, INFO, WARNING…）
 
 ---
 

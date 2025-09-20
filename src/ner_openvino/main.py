@@ -10,8 +10,9 @@ import asyncio
 
 import openvino as ov
 from fastapi import FastAPI, Depends, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from sqlmodel import Session, create_engine, select
+from sqlmodel import Session, create_engine, delete, select
 from transformers import pipeline
 
 # === 追加: NPU ルート用ユーティリティ ===
@@ -49,6 +50,12 @@ init_device = str(
 engine = create_engine(
     os.getenv("DATABASE_URL", "sqlite:///./ner_app.db"),
 )
+
+# CORS Origins
+origins = [
+    "http://localhost:5173",
+    "http://localhost:4173",
+]
 
 
 class Entity(BaseModel):
@@ -193,6 +200,13 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def get_backend(request: Request) -> BaseBackend:
@@ -319,20 +333,24 @@ async def create_thread(thread: ThreadCreateSchema, session: SessionDep):
 @app.delete("/thread/{thread_id}")
 async def delete_thread(thread_id: str, session: SessionDep):
     thread = session.get(AiThread, thread_id)
-    if thread:
-        session.delete(thread)
-        session.commit()
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+
+    session.exec(delete(AiMessage).where(AiMessage.thread_id == thread.id))
+    session.delete(thread)
+    session.commit()
     return {"status": "ok"}
 
 
 @app.patch("/thread/{thread_id}", response_model=ThreadSchema | None)
 async def update_thread(thread_id: str, update: ThreadUpdateSchema, session: SessionDep):
     thread = session.get(AiThread, thread_id)
-    if thread:
-        thread.title = update.new_title
-        session.add(thread)
-        session.commit()
-        session.refresh(thread)
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    thread.title = update.new_title
+    session.add(thread)
+    session.commit()
+    session.refresh(thread)
     return thread
 
 

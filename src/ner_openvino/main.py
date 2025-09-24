@@ -193,11 +193,36 @@ class NPUBackend(BaseBackend):
 # ------------ FastAPI 本体 ------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 既定は AUTO で pipeline ルート
-    app.state.backend = PipelineBackend(model_dir=SAVE_DIR, device=init_device)
+    device_upper = init_device.upper()
+
+    # 利用可能なデバイス一覧を取得
+    available_devices = ov.Core().get_available_devices()
+
+    # デバイスロック初期化
     app.state.compile_lock = asyncio.Lock()
+
+    # NPU 専用バックエンドを利用する場合
+    if "NPU" in device_upper and device_upper == "NPU":
+        if "NPU" in available_devices:
+            app.state.backend = NPUBackend(
+                model_dir=SAVE_DIR_NPU,
+                max_seq_len=max_seq_len,
+                batch_size=batch_size,
+            )
+        else:
+            raise RuntimeError(f"NPU is not available. Found devices: {available_devices}")
+    else:
+        # Pipeline backend をデフォルトとして初期化
+        app.state.backend = PipelineBackend(
+            model_dir=SAVE_DIR,
+            device=init_device,
+        )
+
+    # DB 作成
     SQLModel.metadata.create_all(engine)
+
     yield
+
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(

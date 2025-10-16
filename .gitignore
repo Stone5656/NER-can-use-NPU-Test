@@ -8,3 +8,4 @@ models/*
 !.env.example
 *.egg-info
 database.db
+ner_app.db

@@ -11,11 +11,10 @@ DEFAULT_MODEL_REPO = "tsmatz/xlm-roberta-ner-japanese"
 
 def _resolve_models_dir() -> Path:
     # 環境変数 NER_PATTERN_DIR が設定されていればそちらを優先
-    env_dir = os.getenv("NER_PATTERN_DIR")
-    if env_dir:
-        return Path(env_dir).expanduser().resolve()
-    # そうでなければこのファイルの隣を使用
-    return Path(__file__).resolve().parent
+    env_dir = os.getenv("NER_PATTERN_DIR", "ner_pattern")
+    path = Path(__file__).resolve().parents[3] / env_dir
+
+    return path
 
 def load_allow_patterns() -> list[str]:
     folder_path = _resolve_models_dir()

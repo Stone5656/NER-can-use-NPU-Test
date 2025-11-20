@@ -7,6 +7,7 @@ from transformers import AutoTokenizer
 from ner_openvino.download_model.types import LoadedNER
 from ner_openvino.download_model.downloader import download_model_snapshot
 from ner_openvino.utils.logger_utils.logger_injector import with_logger
+from ner_openvino.download_model.shape_json import get_shape_json_path, is_shape_same, write_shape_json
 
 
 @with_logger("NER-OpenVINO-APP", env_log_path="LOG_FILE_PATH", env_log_level="LOG_LEVEL")
@@ -56,11 +57,24 @@ def load_npu_model_intel(
 
     # 2) NPU要件：静的形状に固定してからコンパイル
     logger.info("reshape を適用: batch=%d, seq_len=%d", batch_size, max_seq_len)
-    ov_model.reshape(batch_size=batch_size, sequence_length=max_seq_len)  # ★重要
+    ov_model.reshape(batch_size=batch_size, sequence_length=max_seq_len)
 
     # ★ compile() は「引数なし」で呼ぶ（device は上で設定済み）
-    logger.info("NPU へコンパイルします")
-    ov_model.compile()
+    shape_path = get_shape_json_path(model_dir)
+    current_shape = {"batch_size": batch_size, "sequence_length": max_seq_len}
+    
+    # すでに同じ shape でコンパイル済みか？
+    if is_shape_same(shape_path, current_shape):
+        logger.info("shape.json が一致：compile() をスキップします")
+        ov_model.reshape(**current_shape)
+    
+    else:
+        logger.info("shape が異なるためコンパイルを実行します")
+        ov_model.reshape(**current_shape)
+        ov_model.compile()
+        write_shape_json(shape_path, current_shape)
+        logger.info("shape.json を更新しました: %s", shape_path)
+
 
     # 3) Tokenizer
     logger.info("Tokenizer をロード（use_fast=True）")

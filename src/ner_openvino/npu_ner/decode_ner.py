@@ -61,7 +61,7 @@ def decode_ner_outputs_batch(
     # 期待する戻り値の形状: (B, L), (B, L)
     predicted_ids_2d, predicted_scores_2d = compute_softmax_batch(logits)
 
-    # --- 4) サンプルごとに _decode_single へ橋渡し ---
+    # --- 4) サンプルごとに decode_single へ橋渡し ---
     results: list[list[dict[str, object]]] = []
     for b in range(B):
         # tokenizer側とlogits側で L がずれていたら早期に検知

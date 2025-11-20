@@ -14,12 +14,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Session, create_engine, delete, select
 from transformers import pipeline
+from typing import TypeAlias
 
 # === 追加: NPU ルート用ユーティリティ ===
 from ner_openvino import ai
 from ner_openvino.npu_ner.decode_ner import decode_ner_outputs_batch
 from ner_openvino.utils.text_utils.split_longtext import split_text_into_chunks
-from ner_openvino.download_model.loader_intel import load_ner_model_intel
+from ner_openvino.download_model.loader_intel import load_model_intel
 from src.ner_openvino.download_model.loader_intel_npu import load_npu_model_intel
 
 # Gemini API 関係
@@ -53,8 +54,9 @@ engine = create_engine(
 
 # CORS Origins
 origins = [
-    "http://localhost:5173",
-    "http://localhost:4173",
+    "*",
+    "https://chatgpt.com",
+    "https://gemini.google.com"
 ]
 
 
@@ -87,7 +89,7 @@ class BaseBackend:
 class PipelineBackend(BaseBackend):
     def __init__(self, model_dir: Path, device: str = "AUTO"):
         # Transformers + OpenVINO（Optimum 連携 or ov_backend）での従来ルート
-        ner = load_ner_model_intel(model_dir=model_dir)
+        ner = load_model_intel(model_dir=model_dir)
         ner.model.to(device=device)  # AUTO/GPU/CPU など
         self._pipeline = pipeline(
             "token-classification",
@@ -238,7 +240,7 @@ def get_backend(request: Request) -> BaseBackend:
     return request.app.state.backend
 
 
-BackendDep = Annotated[BaseBackend, Depends(get_backend)]
+BackendDep:TypeAlias = Annotated[BaseBackend, Depends(get_backend)]
 
 
 def get_conn():
@@ -246,7 +248,7 @@ def get_conn():
         yield session
 
 
-SessionDep = Annotated[Session, Depends(get_conn)]
+SessionDep:TypeAlias = Annotated[Session, Depends(get_conn)]
 
 
 @app.get("/")

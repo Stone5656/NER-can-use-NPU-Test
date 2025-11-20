@@ -1,0 +1,4 @@
+{
+  "batch_size": 4,
+  "sequence_length": 256
+}

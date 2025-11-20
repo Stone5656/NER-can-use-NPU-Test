@@ -1,9 +1,8 @@
 from pathlib import Path
 from typing import Iterable
 
-from huggingface_hub import HfApi, ModelInfo, hf_hub_url, snapshot_download
+from huggingface_hub import HfApi, ModelInfo, hf_hub_url
 from ner_openvino.download_model.config import DEFAULT_MODEL_REPO, load_allow_patterns, load_ignore_patterns
-from ner_openvino.download_model.downloader import get_model_urls
 from ner_openvino.hf_paths import filter_repo_objects
 
 
@@ -40,7 +39,7 @@ def get_model_urls(
                 repo_type="model",
             )
         )
-    print(urls)
+    return urls
 
 
 if __name__ == "__main__":

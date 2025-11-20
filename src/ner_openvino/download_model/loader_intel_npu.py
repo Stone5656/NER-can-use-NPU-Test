@@ -62,19 +62,18 @@ def load_npu_model_intel(
     # ★ compile() は「引数なし」で呼ぶ（device は上で設定済み）
     shape_path = get_shape_json_path(model_dir)
     current_shape = {"batch_size": batch_size, "sequence_length": max_seq_len}
-    
+
     # すでに同じ shape でコンパイル済みか？
     if is_shape_same(shape_path, current_shape):
         logger.info("shape.json が一致：compile() をスキップします")
         ov_model.reshape(**current_shape)
-    
+
     else:
         logger.info("shape が異なるためコンパイルを実行します")
         ov_model.reshape(**current_shape)
         ov_model.compile()
         write_shape_json(shape_path, current_shape)
         logger.info("shape.json を更新しました: %s", shape_path)
-
 
     # 3) Tokenizer
     logger.info("Tokenizer をロード（use_fast=True）")

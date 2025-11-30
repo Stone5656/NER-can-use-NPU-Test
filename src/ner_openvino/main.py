@@ -20,8 +20,7 @@ from typing import TypeAlias
 from ner_openvino import ai
 from ner_openvino.npu_ner.decode_ner import decode_ner_outputs_batch
 from ner_openvino.utils.text_utils.split_longtext import split_text_into_chunks
-from ner_openvino.download_model.loader_intel import load_model_intel
-from src.ner_openvino.download_model.loader_intel_npu import load_npu_model_intel
+from ner_openvino.download_model.loaders import load_model_intel, load_npu_model_intel
 
 # Gemini API 関係
 from .models import *
@@ -31,11 +30,11 @@ load_dotenv()
 
 # モデル保存先
 SAVE_DIR = Path(
-    os.getenv("NER_SAVE_DIR", "./models/tsmatz_intel")
+    os.getenv("NER_SAVE_DIR", "./models/facebook_roberta")
 ).expanduser().resolve()
 
 SAVE_DIR_NPU = Path(
-    os.getenv("NER_SAVE_DIR_NPU", "./models/tsmatz_intel_npu")
+    os.getenv("NER_SAVE_DIR_NPU", "./models/facebook_roberta_npu")
 ).expanduser().resolve()
 
 # 推論用の最大シーケンス長とバッチサイズ

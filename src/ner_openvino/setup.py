@@ -1,8 +1,6 @@
 import os
 from pathlib import Path
 from ner_openvino.download_model.config import DEFAULT_MODEL_REPO
-from ner_openvino.download_model.loader_intel_npu import load_npu_model_intel
-from ner_openvino.download_model.loader_intel import load_model_intel
 from ner_openvino.model_urls import get_model_urls
 import json
 
